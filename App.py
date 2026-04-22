@@ -7,10 +7,19 @@ st.set_page_config(page_title="ATD Smart Calc", page_icon="⚡", layout="centere
 # --- CUSTOM CSS FOR DARK BLUE THEME ---
 st.markdown("""
     <style>
+    /* 1. Pure App ka look */
     .stApp {
         background-color: #001f3f;
         color: #ffffff;
     }
+    
+    /* 2. Streamlit Branding hatane ke liye */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+
+    /* 3. Baki ka styling waisa hi rahega */
     label, p, h1, h2, h3, .stMarkdown {
         color: #ffffff !important;
     }
@@ -23,13 +32,6 @@ st.markdown("""
     div[data-testid="stMetricValue"] > div {
         color: #00d4ff !important;
     }
-    .status-box {
-        padding: 10px;
-        border-radius: 8px;
-        background-color: rgba(0, 212, 255, 0.1);
-        border-left: 4px solid #00d4ff;
-        margin-bottom: 20px;
-    }
     .footer-credit {
         position: fixed;
         left: 0;
@@ -40,7 +42,6 @@ st.markdown("""
         font-size: 10px;
         color: rgba(255, 255, 255, 0.4);
     }
-    hr { border-color: rgba(255, 255, 255, 0.1) !important; }
     </style>
     """, unsafe_allow_html=True)
 
