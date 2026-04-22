@@ -1,55 +1,66 @@
 import streamlit as st
 import pandas as pd
 
-# Page Config
-st.set_page_config(page_title="WR ATD Smart Calc", page_icon="🚉", layout="centered")
+# Page Configuration
+st.set_page_config(page_title="ATD Smart Calc", page_icon="⚡", layout="centered")
 
-# --- CUSTOM CSS WITH BACKGROUND LOGO ---
+# --- CUSTOM CSS FOR DARK BLUE THEME ---
 st.markdown("""
     <style>
-    /* Background Logo Effect */
+    /* Main Background Dark Blue */
     .stApp {
-        background-image: url("https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Indian_Railways_logo.svg/1200px-Indian_Railways_logo.svg.png");
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        background-position: center;
-        background-size: 400px; /* Logo size in background */
-        opacity: 0.95; /* Overall app opacity */
+        background-color: #001f3f; /* Deep Dark Blue */
+        color: #ffffff;
     }
 
-    /* Overlay to make text readable */
-    .stApp::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background-color: rgba(245, 247, 249, 0.92); /* Background tint to keep it clean */
-        z-index: -1;
+    /* Input Labels and Text Color */
+    label, p, h1, h2, h3, .stMarkdown {
+        color: #ffffff !important;
     }
 
-    .stMetric {
-        background-color: #ffffff;
-        padding: 20px;
-        border-radius: 15px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        border-top: 5px solid #004182;
-    }
-
-    .credit-section {
-        background: linear-gradient(90deg, #004182, #0056b3);
-        color: white;
+    /* Metric Cards Styling */
+    div[data-testid="stMetric"] {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 15px;
-        border-radius: 12px;
-        text-align: center;
-        margin-top: 30px;
-        box-shadow: 0 4px 15px rgba(0,65,130,0.3);
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.3);
     }
 
+    /* Metric Value and Label Color */
+    div[data-testid="stMetricValue"] > div {
+        color: #00d4ff !important; /* Neon Blue for values */
+    }
+    div[data-testid="stMetricLabel"] > p {
+        color: #cccccc !important;
+    }
+
+    /* Status Box for Tension Length */
     .status-box {
-        padding: 12px;
-        border-radius: 10px;
-        background-color: rgba(227, 242, 253, 0.8);
-        border-left: 5px solid #2196f3;
-        font-weight: 500;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: rgba(0, 212, 255, 0.1);
+        border-left: 4px solid #00d4ff;
+        margin-bottom: 20px;
+        font-size: 0.9em;
+    }
+
+    /* Minimalist Credit Section */
+    .footer-credit {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        text-align: center;
+        padding: 10px;
+        font-size: 10px; /* Sabse chhota font */
+        color: rgba(255, 255, 255, 0.4); /* Faded color */
+        letter-spacing: 1px;
+    }
+
+    /* Divider color */
+    hr {
+        border-color: rgba(255, 255, 255, 0.1) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -66,52 +77,21 @@ def load_data():
         return df
     except: return None
 
-# --- HEADER SECTION ---
-col_logo, col_title = st.columns([1, 4])
-with col_logo:
-    st.image("https://upload.wikimedia.org/wikipedia/en/thumb/4/41/Indian_Railways_logo.svg/1200px-Indian_Railways_logo.svg.png", width=80)
-with col_title:
-    st.title("Western Railway")
-    st.subheader("OHE ATD Smart Calculator")
-
+# --- HEADER (No Logos) ---
+st.markdown("<h2 style='text-align: center;'>OHE ATD Smart Calculator</h2>", unsafe_allow_html=True)
+st.markdown("<p style='text-align: center; opacity: 0.7;'>Precision Engineering Tool</p>", unsafe_allow_html=True)
 st.markdown("---")
 
 df = load_data()
 
 # --- INPUT SECTION ---
-with st.container():
-    c1, c2 = st.columns([1.5, 1])
-    with c1:
-        if df is not None:
-            struct_list = df['Structure_No'].dropna().unique().tolist()
-            selected_struct = st.selectbox("📍 Structure Number Selection", ["Manual Entry"] + struct_list)
-            if selected_struct != "Manual Entry":
-                L = float(df[df['Structure_No'] == selected_struct]['Tension_Length'].values[0])
-                st.markdown(f"<div class='status-box'>Tension Length: {L} m</div>", unsafe_allow_html=True)
-            else:
-                L = st.number_input("Manual Tension Length (L)", value=750.0)
+col1, col2 = st.columns([1.5, 1])
+
+with col1:
+    if df is not None:
+        struct_list = df['Structure_No'].dropna().unique().tolist()
+        selected_struct = st.selectbox("📍 Structure Number", ["Manual Entry"] + struct_list)
+        if selected_struct != "Manual Entry":
+            L = float(df[df['Structure_No'] == selected_struct]['Tension_Length'].values[0])
+            st.markdown(f"<div class='status-box'>Tension Length: {L} m</div>", unsafe_allow_html=True)
         else:
-            L = st.number_input("Tension Length (L)", value=750.0)
-    with c2:
-        theta_2 = st.number_input("🌡️ Current Temp (°C)", value=35.0, step=0.5)
-
-# --- CALCULATIONS ---
-alpha, theta_1 = 0.000017, 35
-delta_1 = L * alpha * (theta_1 - theta_2) * 1000
-x_val, y_val = 1300 + delta_1, 2300 + (3 * delta_1)
-
-# --- RESULTS ---
-st.write("### Technical Field Parameters")
-r1, r2 = st.columns(2)
-r1.metric(label="X Value (Pulley)", value=f"{round(x_val, 1)} mm", delta=f"{round(delta_1, 1)} mm")
-r2.metric(label="Y Value (Weight)", value=f"{round(y_val, 1)} mm", delta=f"{round(3*delta_1, 1)} mm")
-
-# --- BRANDING / CREDIT ---
-st.markdown(f"""
-    <div class='credit-section'>
-        <p style='margin:0; font-size: 0.85em; letter-spacing: 1px;'>CONCEPTUALIZED & DEVELOPED BY</p>
-        <h2 style='margin:5px 0; color: #FFD700;'>Akki</h2>
-        <p style='margin:0; font-weight: 500;'>Junior Engineer | Traction Department</p>
-        <p style='margin:0; font-size: 0.8em; opacity: 0.9;'>Western Railway, Gujarat</p>
-    </div>
-    """, unsafe_allow_html=True)
