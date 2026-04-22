@@ -57,4 +57,4 @@ res1, res2 = st.columns(2)
 res1.metric("X Value (Pulley)", f"{round(x_val, 1)} mm")
 res2.metric("Y Value (Weight)", f"{round(y_val, 1)} mm")
 
-st.info("Tip: Is portal ko mobile mein 'Add to Home Screen' karke use karein.")
+st.info("Tip: Is portal ko mobile mein 'Add to Home Screen' karke use ok karein.")
