@@ -30,13 +30,13 @@ st.markdown("""
         position: fixed;
         left: 0;
         bottom: 0;
-        width: 100%;
+        width: 80%;
         background-color: #050a0f;
         color: #00d4ff;
         text-align: center;
-        padding: 10px;
+        padding: 08px;
         font-weight: bold;
-        border-top: 1px solid #30363d;
+        border-top: 0.5px solid #30363d;
         z-index: 100;
     }
     </style>
