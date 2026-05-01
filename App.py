@@ -29,7 +29,7 @@ st.markdown("""
 
 # --- 2. SMART DATA LOADING (Online/Offline) ---
 SHEET_ID = "1vfioGSmpC7a5S8SMUpCk9xn-mtttvcTecLEQ1Sd6XkU"
-SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=xlxs"
 LOCAL_FILE = "atd_data.csv"
 
 @st.cache_data
