@@ -102,6 +102,6 @@ else:
 # --- 4. CENTERED FOOTER ---
 st.markdown(f"""
     <div class="footer">
-        DEVELOPED BY: A.K.MULCHANDANI JE/TRD (TRACTION DEPARTMENT)
+        DEVELOPED BY: A.K.MULCHANDANI JE/TRD
     </div>
     """, unsafe_allow_html=True)
