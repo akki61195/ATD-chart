@@ -1,104 +1,90 @@
 import streamlit as st
 import pandas as pd
+import requests
+import os
 
-# Page Configuration
-st.set_page_config(page_title="ATD Smart Calc", page_icon="⚡", layout="centered")
+# --- 1. PAGE SETUP ---
+st.set_page_config(page_title="OHE ATD Smart Tool", page_icon="⚡", layout="centered")
 
-# --- CUSTOM CSS FOR DARK BLUE THEME ---
 st.markdown("""
     <style>
-    /* 1. Pure App ka look */
-    .stApp {
-        background-color: #001f3f;
-        color: #ffffff;
+    .stApp { background-color: #050a0f; color: white; }
+    div[data-testid="stMetricValue"] > div { 
+        color: #ffffff !important; 
+        font-weight: 900 !important; 
+        font-size: 38px !important; 
     }
-    
-    /* 2. Streamlit Branding hatane ke liye */
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-
-    /* 3. Baki ka styling waisa hi rahega */
-    label, p, h1, h2, h3, .stMarkdown {
-        color: #ffffff !important;
+    .scroll-container {
+        width: 100%; overflow: hidden; background-color: #050a0f;
+        border-top: 1px solid #30363d; position: fixed; bottom: 0; left: 0;
+        padding: 5px 0; z-index: 1000;
     }
-    div[data-testid="stMetric"] {
-        background-color: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        padding: 15px;
-        border-radius: 10px;
+    .scroll-text {
+        display: inline-block; white-space: nowrap; font-size: 14px;
+        font-weight: bold; color: #00d4ff; animation: marquee 15s linear infinite;
     }
-    div[data-testid="stMetricValue"] > div {
-        color: #00d4ff !important;
-    }
-    .footer-credit {
-        position: fixed;
-        left: 0;
-        bottom: 0;
-        width: 100%;
-        text-align: center;
-        padding: 10px;
-        font-size: 10px;
-        color: rgba(255, 255, 255, 0.4);
-    }
+    @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
     </style>
     """, unsafe_allow_html=True)
 
-# --- DATA LOADING ---
+# --- 2. SMART DATA LOADING (Online/Offline) ---
 SHEET_ID = "1vfioGSmpC7a5S8SMUpCk9xn-mtttvcTecLEQ1Sd6XkU"
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/export?format=csv"
+LOCAL_FILE = "atd_data.csv"
 
 @st.cache_data
 def load_data():
+    # Pehle Online check karega
     try:
-        df = pd.read_csv(SHEET_URL)
-        df.columns = df.columns.str.strip() 
-        return df
+        df = pd.read_csv(SHEET_URL, timeout=3)
+        df.columns = df.columns.str.strip()
+        # Naya data milte hi local mein save kar lega (future offline ke liye)
+        df.to_csv(LOCAL_FILE, index=False)
+        return df, "Online (Latest)"
     except:
-        return None
-
-# --- HEADER ---
-st.markdown("<h2 style='text-align: center;'>OHE ATD Smart Calculator</h2>", unsafe_allow_html=True)
-st.markdown("<p style='text-align: center; opacity: 0.7;'>Precision Engineering Tool</p>", unsafe_allow_html=True)
-st.markdown("---")
-
-df = load_data()
-
-# --- INPUT SECTION ---
-col1, col2 = st.columns([1.5, 1])
-
-with col1:
-    if df is not None:
-        struct_list = df['Structure_No'].dropna().unique().tolist()
-        selected_struct = st.selectbox("📍 Structure Number", ["Manual Entry"] + struct_list)
-        if selected_struct != "Manual Entry":
-            L_val = df[df['Structure_No'] == selected_struct]['Tension_Length'].values[0]
-            L = float(L_val)
-            st.markdown(f"<div class='status-box'>Tension Length: {L} m</div>", unsafe_allow_html=True)
+        # Agar net nahi hai toh local CSV uthayega
+        if os.path.exists(LOCAL_FILE):
+            df = pd.read_csv(LOCAL_FILE)
+            df.columns = df.columns.str.strip()
+            return df, "Offline (Local CSV)"
         else:
-            L = st.number_input("Manual Tension Length (L)", value=750.0)
+            return None, "No Data Found"
+
+# --- 3. UI ---
+st.markdown("<h2 style='text-align: center; color: #00d4ff;'>OHE ATD Smart Tool</h2>", unsafe_allow_html=True)
+
+df, status = load_data()
+st.caption(f"Status: {status}")
+
+if df is not None:
+    struct_list = df['Structure_No'].dropna().unique().tolist()
+    selected_struct = st.selectbox("📍 Select Structure No", ["Manual Entry"] + struct_list)
+    
+    if selected_struct != "Manual Entry":
+        L = float(df[df['Structure_No'] == selected_struct]['Tension_Length'].values[0])
+        st.info(f"Tension Length (L): {L} m")
     else:
-        L = st.number_input("Tension Length (L)", value=750.0)
+        L = st.number_input("Enter Tension Length (L) manually", value=750.0)
+else:
+    L = st.number_input("CSV/Sheet missing. Enter L manually", value=750.0)
 
-with col2:
-    theta_2 = st.number_input("🌡️ Current Temp (°C)", value=35.0, step=0.5)
+# --- 4. CALCULATION ---
+theta_2 = st.number_input("Current Temp (°C)", value=35.0, step=0.1)
 
-# --- CALCULATIONS ---
-try:
-    alpha, theta_1 = 0.000017, 35
-    delta_1 = float(L) * alpha * (theta_1 - float(theta_2)) * 1000
-    x_val = 1300 + delta_1
-    y_val = 2300 + (3 * delta_1)
+# Formula
+delta = L * 0.000017 * (35 - theta_2) * 1000
+x_val, y_val = 1300 + delta, 2300 + (3 * delta)
 
-    # --- RESULTS ---
-    st.write("#### Technical Output")
-    r1, r2 = st.columns(2)
-    r1.metric(label="X Value (Pulley)", value=f"{round(x_val, 1)} mm", delta=f"{round(delta_1, 1)} mm")
-    r2.metric(label="Y Value (Weight)", value=f"{round(y_val, 1)} mm", delta=f"{round(3*delta_1, 1)} mm")
+st.divider()
+c1, c2 = st.columns(2)
+c1.metric("X (Pulley Gap)", f"{round(x_val, 1)} mm")
+c2.metric("Y (Weight Height)", f"{round(y_val, 1)} mm")
 
-except Exception as e:
-    st.error("Data check karein. Calculation mein problem hai.")
-
-# --- MINIMALIST CREDIT ---
-st.markdown("<div class='footer-credit'>DEVELOPED BY: A.K.MULCHANDANI JE/TRD</div>", unsafe_allow_html=True)
+# --- 5. SCROLLING FOOTER ---
+st.markdown(f"""
+    <div class="scroll-container">
+        <div class="scroll-text">
+            DEVELOPED BY: A.K.MULCHANDANI JE/TRD (TRACTION DEPARTMENT) - INDIAN RAILWAYS --- ⚡ RAILWAY ENGINEERING ⚡
+        </div>
+    </div>
+""", unsafe_allow_html=True)
